@@ -1,0 +1,109 @@
+---
+title: "Causal effect of COVID on Personal Income"
+author: "Naihuan Jing"
+date: "2022-11-29"
+output: html_document
+---
+
+```{r,message=FALSE}
+library(tidyverse)
+
+PI<-read.csv("Causal_effect_on_PI.csv")
+
+head(PI)
+```
+
+PI: Average personal income in million by state from 4 quarters in 2020 (million dollar)
+
+Gender: Male to female ratio by state in 2020 (ratio)
+
+Education: Percentage of people earning Bachelor's Degree or Higher by state in 2020 (%)
+
+Unemployment: Average Unemployment rate by state in 2020 (%)
+
+COVID: Average Percentage of positive test by state in 2020 (%)
+
+Data science question:
+
+Does COVID have causal effect on Personal Income? (multiple linear)
+
+Does unemployment in xxx state relate to COVID? (simple linear)
+
+Are the GDP among different states related to the COVID stats? (heat map, correlation)
+
+```{r}
+# Full Multiple linear regression model
+model.full <- lm(PI ~ COVID + Gender + Education + Unemployment, data = PI)
+summary(model.full)
+```
+
+Rough idea:
+
+Hypothesis testing: is this an appropriate data science model?
+
+$H_0: \beta1=\beta2=\beta3=\beta4=0$
+
+F-statistic: 2.643 on 4 and 46 DF,  p-value: 0.04544: Statistically significant model (This means that, at least, one of the predictor variables is significantly related to the outcome variable.)
+
+However: Multiple R-squared:  0.1869,	Adjusted R-squared:  0.1162, indicates the data does not fit the model well. So -- take a look at coefficient
+
+```{r}
+# Coefficient
+summary(model.full)$coefficient
+```
+
+Meaning for each coefficient in this model:
+
+With other predictors remains the same, one unit increase of xxx will lead to yyy million dollar increase on average personal income of one state.
+...
+...
+...
+...
+Meaning of intercept: the basic average personal income of one state without the effect of these four variables
+
+Hypothesis testing: for each predictor, is it significant (meaningful) in this model?
+
+$H_0: \beta1=0$
+
+Turns out only unemployment significant at 95% confidence level. COVID is significant at 85% level.
+
+~~~Improve the model~~~
+
+First delete the worst significant variable -- "Gender"
+
+```{r}
+# Multiple linear regression model without gender
+model.3 <- lm(PI ~ COVID + Education + Unemployment, data = PI)
+summary(model.3)
+```
+
+F-statistic: 3.588 on 3 and 47 DF,  p-value: 0.02042 < former model's p-value, which means after removing the variable "Gender", we have a more significant model.
+
+```{r}
+# Coefficient
+summary(model.3)$coefficient
+```
+
+Analyze the new coefficient: The p-values for all predictors only slightly decreases, although it helps to build a better model, it's not enough:
+
+Remove the next worst significant predictor -- Education
+
+```{r}
+# Multiple linear regression model without gender, education
+model.2 <- lm(PI ~ COVID + Unemployment, data = PI)
+summary(model.2)
+```
+
+F-statistic: 4.677 on 2 and 48 DF,  p-value: 0.01394, indeed a better model, but the coefficient for COVID becomes worse.
+
+Final check: simple linear regression
+
+```{r}
+# Simple linear regression model between personal income and covid
+model.1 <- lm(PI ~ COVID, data = PI)
+summary(model.1)
+```
+
+p-value: 0.6525 inappropriate model with not significant predictor in the simple linear regression model.
+
+Conclusion, although we could say COVID is related to / affects Personal Income at a comparatively low confidence level (85%) in the full model, the further analysis indicates at least with only these four predictors, we cannot conclude COVID has causal effect on PI. It might be helpful to add some other variables into model, but that could possibly cause over-fitting.
