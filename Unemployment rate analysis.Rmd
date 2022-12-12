@@ -1,0 +1,184 @@
+---
+title: "Untitled"
+author: "Xinyu Li"
+date: "2022-11-26"
+output: html_document
+---
+
+
+```{r unemployment}
+# First, we need to drop all the columns we do not need.
+USA_unemp = read.csv("../data/unemployment/USA_unemployment_rate_by_month.csv")
+head(USA_unemp,10)
+```
+As we do not need the Series.ID colum so we drop this cloumn
+```{r}
+data = subset(USA_unemp,select = -c(Series.ID))
+data
+```
+
+Unemployment rate of each state
+
+```{r}
+
+df2 = read.csv("../data/unemployment/unemployment_state_month.csv",encoding="UTF-8")
+df2
+n = sum(is.na(df2))
+table(is.na(df2))  
+```
+Use mean of the column to repalce the missing value
+```{r}
+sub <- which(is.na(df2$Puerto.Rico))
+inputfile1 <- df2[-sub, ] 
+inputfile2 <- df2[sub, ]
+avg_unemp <- mean(inputfile1$Puerto.Rico)
+inputfile2$Puerto.Rico <- rep(avg_unemp,n) 
+result2 <- rbind(inputfile1, inputfile2) 
+result2
+#write.csv(result2,"./unemploy_state_month_without_missing.csv")
+```
+
+
+```{r}
+library("tidyverse")
+df3 = read.csv("./unemploy_state_month_without_missing.csv",encoding="UTF-8")
+df3
+data2019 = df3[df3$Year==2019,]
+data2019_2 = subset(data2019,select = -c(X,Year,Month))
+ann_2019 = colMeans(data2019_2)
+ann_2019
+
+data2020 = df3[df3$Year==2020,]
+data2020_2 = subset(data2020,select = -c(X,Year,Month))
+ann_2020 = colMeans(data2020_2)
+res <- rbind(ann_2020, ann_2019) 
+res2=t(res)
+my_df = data.frame(res2)
+
+my_df <- my_df %>% 
+        rename("unemployment_2020" ="ann_2020",
+              "unemployment_2019" =  "ann_2019")
+my_df
+write.csv(my_df,"./unemploy_state_annual.csv")
+```
+
+unemployment t-test, 1.virginia and CAlifornia mean of employment equal or not 2020 and 2019
+
+```{r}
+result3 = result2
+result3$Year = as.factor(result2$Year)
+result3 %>%
+  ggplot( aes(x =Year , y = California, fill=Year)) +
+  geom_boxplot() +ggtitle("unemployment of CAlifornia of 2019 and 2020")
+
+
+```
+```{r}
+result3 %>%
+  ggplot( aes(x =Year , y = Virginia, fill=Year)) +
+  geom_boxplot() +ggtitle("unemployment of Virginia of 2019 and 2020")
+
+```
+
+```{r}
+data2 = data
+data2$Year = as.factor(data$Year)
+data2 %>%
+  ggplot( aes(x =Year , y = Value, fill=Year)) +
+  geom_boxplot() +ggtitle("unemployment of USA of 2019 and 2020")
+```
+
+
+
+
+ Null hypothesis: the average "unemployment" is equal for 2019 and that of 2020 of CAlifornia.$H_0: \mu_1 = \mu_2$
+Alternative hypothesis: the average "unemployment" for 2019 is less than that of 2020 of CAlifornia..$H_1: \mu_1-\mu_2< 0$
+
+```{r}
+CA_2019 <- subset(result3, select=California,
+                      subset=Year==2019, drop=T)
+
+hist(CA_2019,main = "histogram of unemployment of CAlifornia in 2019",xlab = 'Unemployment rate')
+
+CA_2020 <- subset(result3, select=California,
+                      subset=Year==2020, drop=T)
+hist(CA_2020,main = "histogram of unemployment of CAlifornia in 2020",xlab = 'Unemployment rate')
+plot(CA_2019)
+plot(CA_2020)
+t.test(CA_2019, CA_2020, alt="less")
+```
+Null hypothesis: the average "unemployment" is equal for 2019 and that of 2020 of Virginia.$H_0: \mu_1 = \mu_2$
+Alternative hypothesis: the average "unemployment" for 2019 is less than that of 2020 of Virginia.$H_1: \mu_1-\mu_2< 0$
+```{r}
+VA_2019 <- subset(result3, select=Virginia,
+                      subset=Year==2019, drop=T)
+
+VA_2020 <- subset(result3, select=Virginia,
+                      subset=Year==2020, drop=T)
+
+hist(VA_2019,main = "histogram of unemployment of Virginia in 2019",xlab = 'Unemployment rate')
+hist(VA_2020,main = "histogram of unemployment of Virginia in 2020",xlab = 'Unemployment rate')
+plot(VA_2019)
+plot(VA_2020)
+t.test(VA_2019, VA_2020, alt="less")
+```
+Null hypothesis: the average "unemployment" is equal for 2019 and that of 2020 of whole country.$H_0: \mu_1 = \mu_2$
+Alternative hypothesis: the average "unemployment" for 2019 is less than that of 2020 of Virginia.$H_1: \mu_1-\mu_2< 0$
+```{r}
+US_2019 <- subset(data, select=Value,
+                      subset=Year==2019, drop=T)
+
+US_2020 <- subset(data, select=Value,
+                      subset=Year==2020, drop=T)
+hist(US_2019,main = "histogram of unemployment of USA in 2019",xlab = 'Unemployment rate')
+hist(US_2020,main = "histogram of unemployment of USA in 2020",xlab = 'Unemployment rate')
+
+t.test(US_2019, US_2020, alt="less")
+```
+```{r}
+df_2019 = data.frame(value = c(CA_2019, VA_2019,US_2019),label = c(rep("CA",12),rep("VA",12),rep('US',12)))
+
+df_2019 %>%
+  ggplot( aes(x =label , y = value, fill=label)) +
+  geom_boxplot() +ggtitle("unemployment of CA, VA and US in 2019")
+```
+```{r}
+df_2020 = data.frame(value = c(CA_2020, VA_2020,US_2020),label = c(rep("CA",12),rep("VA",12),rep('US',12)))
+
+df_2020 %>%
+  ggplot( aes(x =label , y = value, fill=label)) +
+  geom_boxplot() +ggtitle("unemployment of CA, VA and US in 2020")
+```
+
+
+Null hypothesis: the average "unemployment" is equal for 2019 of CA and that of 2019 of VA.$H_0: \mu_1 = \mu_2$
+Alternative hypothesis: the average "unemployment" for 2019 CA is greater than that of 2019 of VA.$H_1: \mu_1-\mu_2> 0$
+
+```{r}
+t.test(CA_2019, VA_2019, alt="greater")
+```
+Null hypothesis: the average "unemployment" is equal for 2020 of CA and that of 2020 of VA.$H_0: \mu_1 = \mu_2$
+Alternative hypothesis: the average "unemployment" for 2020 CA is greater than that of 2020 of VA.$H_1: \mu_1-\mu_2> 0$
+
+```{r}
+t.test(CA_2020, VA_2020, alt="greater")
+```
+Null hypothesis: the average "unemployment" is equal for 2020 of CA and that of 2020 of USA.$H_0: \mu_1 = \mu_2$
+Alternative hypothesis: the average "unemployment" for 2020 CA is greater than that of 2020 of USA.$H_1: \mu_1-\mu_2> 0$
+
+```{r}
+t.test(CA_2020, US_2020, alt="greater")
+```
+```{r}
+t.test(CA_2019, US_2019, alt="greater")
+```
+
+Null hypothesis: the average "unemployment" is equal for 2020 of VA and that of 2020 of USA.$H_0: \mu_1 = \mu_2$
+Alternative hypothesis: the average "unemployment" for 2020 VA is less than that of 2020 of USA.$H_1: \mu_1-\mu_2< 0$
+```{r}
+t.test(VA_2020, US_2020, alt="less")
+```
+```{r}
+t.test(VA_2019, US_2019, alt="less")
+```
+
