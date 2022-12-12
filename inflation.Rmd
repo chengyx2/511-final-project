@@ -1,0 +1,91 @@
+
+```{r}
+library(tidyverse)
+
+inf = read.csv("inflation.csv")
+```
+
+```{r}
+data = subset(inf,select = -c(AVE))
+df = pivot_longer(data,cols = -c(YEAR),names_to = "month", values_to = "rate")
+df = df[df$YEAR >= 1985,] %>% drop_na(rate)
+df$rate = sapply(df$rate,as.numeric)
+write.csv(df,"./monthinf.csv", row.names = FALSE)
+dfs = df%>%aggregate(by = list(df$YEAR), FUN = mean)%>% subset(select = c(YEAR,rate))
+write.csv(dfs,"./yearinf.csv", row.names = FALSE)
+```
+```{r}
+ret = unique(df$month)
+x = 1
+for (i in ret){
+  df$month[df$month == i] = x
+  x = x+1
+}
+dfm=ISOdate(df$YEAR,df$month, 1)
+df$total = as.Date(dfm,format = "%Y%b%d")
+ggplot(data=df, aes(x= total, y=rate)) + geom_line(aes(size = rate),color="red",size=1.5)
+```
+
+```{r}
+covid = df[df$YEAR>=2020,]
+noncovid = df[df$YEAR <2020,]
+ggplot(data=covid, aes(x= total, y=rate)) + geom_line(aes(size = rate),size=1.5)
+ggplot(data=noncovid, aes(x= total, y=rate)) + geom_line(aes(size = rate),color="red",size=1.5)
+```
+```{r}
+ggplot(NULL, aes(x = YEAR,y= rate)) + geom_boxplot(data = covid,fill = "red")+ geom_boxplot(data = noncovid, fill = "blue")+ggtitle("Weights of new born Girls by Smoker or Non-Smoker")
+
+```
+Null: they have same average inflation rate.
+Alternative: covid has greater average inflation rate
+
+```{r}
+
+t.test(covid$rate, noncovid$rate, alt="greater")
+```
+```{r}
+set.seed(10)
+boot.mean = replicate(10000, mean(sample(covid$rate,length(covid))-mean(sample(noncovid$rate,length(noncovid))), replace = T))
+quantile(boot.mean,c(0.025,0.975))
+qqnorm(boot.mean)
+hist(boot.mean,main = "Bootstrap distribution of difference in means",col = '#FFFF99')
+abline(v = mean(covid$rate) - mean(noncovid$rate), col = "blue", lty = 2)
+```
+
+```{r}
+mean(boot.mean > mean(covid$rate) - mean(noncovid$rate))
+```
+Thus, from bootstrap method we cannot reject null hypothesis 
+
+```{r}
+hist(covid$rate)
+hist(noncovid$rate)
+```
+```{r}
+car = read.csv("car.csv")
+car$Used = as.numeric(gsub(",","",car$Used))
+car$New = as.numeric(gsub(",","",car$New))
+car$Year = as.numeric(substr(car$Year,start = 4,stop =7 ))
+dfm = paste(car$Year,"/01/01",sep = "")
+car$Year = as.Date(dfm)
+car
+```
+
+```{r}
+library(ggplot2)
+temp = df[df$YEAR>=2015 & df$total <= "2022-01-01",]
+temp$rate = temp$rate*10000
+temp
+colors <- c("New car" = "blue", "Used car" = "red", "inflation" = "black")
+ggplot() +
+  geom_line(data = car, aes(x = Year, y = New), color = "blue") + # must include argument label "data"
+  geom_line(data = car, aes(x = Year, y = Used),color = "red")+
+  geom_line(data = temp, aes(x = total, y = rate,color = "orange"))+
+  labs(x = "Year",
+         color = "Legend") +
+   scale_color_manual(values = colors)
+  
+
+
+```
+
