@@ -157,28 +157,8 @@ Alternative hypothesis: the average "unemployment" for 2019 CA is greater than t
 ```{r}
 t.test(CA_2019, VA_2019, alt="greater")
 ```
-Null hypothesis: the average "unemployment" is equal for 2020 of CA and that of 2020 of VA.$H_0: \mu_1 = \mu_2$
-Alternative hypothesis: the average "unemployment" for 2020 CA is greater than that of 2020 of VA.$H_1: \mu_1-\mu_2> 0$
 
-```{r}
-t.test(CA_2020, VA_2020, alt="greater")
-```
-Null hypothesis: the average "unemployment" is equal for 2020 of CA and that of 2020 of USA.$H_0: \mu_1 = \mu_2$
-Alternative hypothesis: the average "unemployment" for 2020 CA is greater than that of 2020 of USA.$H_1: \mu_1-\mu_2> 0$
 
-```{r}
-t.test(CA_2020, US_2020, alt="greater")
-```
-```{r}
-t.test(CA_2019, US_2019, alt="greater")
-```
 
-Null hypothesis: the average "unemployment" is equal for 2020 of VA and that of 2020 of USA.$H_0: \mu_1 = \mu_2$
-Alternative hypothesis: the average "unemployment" for 2020 VA is less than that of 2020 of USA.$H_1: \mu_1-\mu_2< 0$
-```{r}
-t.test(VA_2020, US_2020, alt="less")
-```
-```{r}
-t.test(VA_2019, US_2019, alt="less")
-```
+
 
